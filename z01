@@ -1,0 +1,81 @@
+var des = bundle.inputData.description;
+var qty = bundle.inputData.qty;
+var rate = bundle.inputData.rate;
+var serv = bundle.inputData.service;
+var servID = bundle.inputData.serviceID;
+var shippingAmount = bundle.inputData.shipping;
+var desFin = des.split(',');
+var qtyFin = qty.split(',');
+var rateFin = rate.split(',');
+var servFin = serv.split(',');
+var servIDFin = servID.split(',');
+//enter all data as comma sperated values
+
+var i, len, text;
+for (i = 0, len = desFin.length, text = []; i < len; i++) {
+  text.push({'Description': desFin[i] , 'DetailType':'SalesItemLineDetail', 'SalesItemLineDetail':{'TaxCodeRef': {'value': 'NON' }, 'Qty': qtyFin[i], 'UnitPrice': rateFin[i], 'ItemRef': {'name': servFin[i],'value': servIDFin[i]}}, 'LineNum':  i , 'Amount': qtyFin[i]*rateFin[i], 'Id': i });
+
+}
+text.push({'Amount' : shippingAmount ,'DetailType' :'SalesItemLineDetail','SalesItemLineDetail': {'ItemRef': {'value': 'SHIPPING_ITEM_ID' }}});
+
+var options = {
+  url: `https://quickbooks.api.intuit.com/v3/company/YOURIDHERE/estimate?minorversion=51`,
+  method: 'POST',
+  headers: {
+    'Authorization': `Bearer ${bundle.authData.access_token}`,
+    'Accept': 'application/json'
+    
+  },
+  params: {
+
+
+  },
+  body: {
+  "DocNumber": bundle.inputData.docNumber,  
+  "TotalAmt": bundle.inputData.amount, 
+  "BillEmail": {
+    "Address": bundle.inputData.email
+  }, 
+  "CustomerMemo": {
+    "value": bundle.inputData.memo
+  },
+  "CustomField": [
+   {
+    "DefinitionId": "1",
+    "Name": "YOURCUSTOMFIELD1",
+    "Type": "StringType",
+    "StringValue": bundle.inputData.customField1
+   },
+   {
+    "DefinitionId": "2",
+    "Name": "YOURCUSTOMFIELD2",
+    "Type": "StringType",
+    "StringValue": bundle.inputData.customField2
+   }
+  ],
+  "Line": text,
+  "CustomerRef": {
+    "name": bundle.inputData.customer, 
+    "value": bundle.inputData.customerValue
+  },
+  "ShipMethodRef": {
+   "value": bundle.inputData.shipVia,
+   "name": bundle.inputData.shipVia
+  },
+  
+} 
+      
+    
+  
+}
+
+
+return z.request(options)
+  .then((response) => {
+    response.throwForStatus();
+    const results = response.json;
+
+    // You can do any parsing you need for results here before returning them
+
+    return results;
+  });
